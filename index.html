@@ -30,6 +30,7 @@
     }
     input, select {
       padding: 0.75rem; border: 2px solid #ccc; border-radius: 8px; font-size: 1rem;
+      width: 100%;
     }
     input:focus, select:focus {
       outline: none; border-color: #667eea; box-shadow: 0 0 0 3px rgba(102,126,234,0.2);
@@ -60,6 +61,12 @@
     .message {
       text-align: center; color: #555; padding: 2rem;
     }
+    label {
+      display: block; margin-bottom: 0.5rem; font-weight: 600; color: #444;
+    }
+    .search-info {
+      text-align: center; margin-bottom: 1rem; color: #666; font-size: 0.9rem;
+    }
   </style>
 </head>
 <body>
@@ -71,21 +78,22 @@
   <div class="search-box">
     <div class="form-grid">
       <div>
-        <label>Job Title*</label>
+        <label for="jobTitle">Job Title*</label>
         <input id="jobTitle" type="text" placeholder="e.g. Data Analyst" required />
       </div>
       <div>
-        <label>Company (optional)</label>
+        <label for="company">Company (optional)</label>
         <input id="company" type="text" placeholder="e.g. Google" />
+        <small style="color: #666; font-size: 0.8rem;">Leave empty to search top companies</small>
       </div>
       <div>
-        <label>Location*</label>
+        <label for="location">Location*</label>
         <input id="location" type="text" placeholder="e.g. USA, Remote" required />
       </div>
       <div>
-        <label>Job Type</label>
+        <label for="jobType">Job Type</label>
         <select id="jobType">
-          <option value="">Any</option>
+          <option value="">Any Type</option>
           <option>Full-time</option>
           <option>Part-time</option>
           <option>Contract</option>
@@ -132,7 +140,7 @@
           job_type: type
         });
 
-        const response = await fetch(\`\${API_URL}?\${params.toString()}\`);
+        const response = await fetch(`${API_URL}?${params.toString()}`);
         const data = await response.json();
 
         if (!data.jobs || data.jobs.length === 0) {
@@ -144,20 +152,27 @@
           return;
         }
 
-        resultsDiv.innerHTML = data.jobs
-          .map(job => `
-            <div class="job-card">
-              <h3>${job.title}</h3>
-              <p><strong>Company:</strong> ${job.company}</p>
-              <p><strong>Location:</strong> ${job.location}</p>
-              <p><strong>Type:</strong> ${job.type}</p>
-              <p><strong>Posted:</strong> ${job.posted || "N/A"}</p>
-              <a href="${job.url}" target="_blank">
-                <i class="fas fa-external-link-alt"></i> View Job Posting
-              </a>
-            </div>
-          `)
-          .join("");
+        resultsDiv.innerHTML = `
+          <div class="search-info">
+            <strong>${data.jobs.length} job${data.jobs.length > 1 ? 's' : ''} found</strong>
+          </div>
+          ${data.jobs
+            .map(job => `
+              <div class="job-card">
+                <h3>${job.title}</h3>
+                <p><strong>Company:</strong> ${job.company}</p>
+                <p><strong>Location:</strong> ${job.location}</p>
+                <p><strong>Type:</strong> ${job.type || "Not specified"}</p>
+                <p><strong>Posted:</strong> ${job.posted || "Recently"}</p>
+                ${job.experience ? `<p><strong>Experience:</strong> ${job.experience}</p>` : ''}
+                <p><em>${job.note || "Direct career site search"}</em></p>
+                <a href="${job.url}" target="_blank">
+                  <i class="fas fa-external-link-alt"></i> View Job Posting
+                </a>
+              </div>
+            `)
+            .join("")}
+        `;
       } catch (err) {
         console.error("Error:", err);
         resultsDiv.innerHTML = `
@@ -167,6 +182,13 @@
           </div>`;
       }
     }
+
+    // Add event listener for Enter key
+    document.addEventListener('keypress', function(event) {
+      if (event.key === 'Enter') {
+        searchJobs();
+      }
+    });
 
     searchBtn.addEventListener("click", searchJobs);
   </script>
